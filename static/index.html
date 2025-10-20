@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Memory System</title>
+    <script>
+        const userId = 'test_user_' + Math.random().toString(36).substring(7);
+        const sessionId = 'session_' + Math.random().toString(36).substring(7);
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('message');
+            const chatLog = document.getElementById('chatLog');
+            const message = messageInput.value;
+            
+            if (!message.trim()) return;
+            
+            // Add user message to chat
+            chatLog.innerHTML += `<div><strong>User:</strong> ${message}</div>`;
+            messageInput.value = '';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        session_id: sessionId,
+                        message: message
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Add assistant response to chat
+                chatLog.innerHTML += `<div><strong>Assistant:</strong> ${data.reply}</div>`;
+                
+                // Show memory context
+                document.getElementById('memoryContext').textContent = 
+                    JSON.stringify(data.memory_used, null, 2);
+                
+                // Auto-scroll to bottom
+                chatLog.scrollTop = chatLog.scrollHeight;
+                
+                // Update memory view
+                await updateMemoryView();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                chatLog.innerHTML += `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function updateMemoryView() {
+            try {
+                const response = await fetch(`http://localhost:8000/api/memory/${userId}`);
+                const data = await response.json();
+                document.getElementById('memoryView').textContent = 
+                    JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error('Error updating memory view:', error);
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .chat-container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        #chatLog {
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #eee;
+        }
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+        input {
+            flex-grow: 1;
+            padding: 5px;
+        }
+        button {
+            padding: 5px 15px;
+        }
+        .memory-container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        pre {
+            white-space: pre-wrap;
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Memory System</h1>
+    <div class="container">
+        <div class="chat-container">
+            <h2>Chat</h2>
+            <div id="chatLog"></div>
+            <div class="input-container">
+                <input type="text" id="message" placeholder="Type your message..." 
+                       onkeypress="if(event.key === 'Enter') sendMessage()">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+            <h3>Last Response Context</h3>
+            <pre id="memoryContext"></pre>
+        </div>
+        <div class="memory-container">
+            <h2>Memory State</h2>
+            <pre id="memoryView"></pre>
+        </div>
+    </div>
+</body>
+</html>
