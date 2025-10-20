@@ -1,4 +1,4 @@
-# AI Memory System - Part 2
+# llm-memory-management (Part 2)
 
 A FastAPI-based AI Memory system implementing short-term, long-term (summary), and episodic memory using MongoDB and Ollama local LLM.
 
